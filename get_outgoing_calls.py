@@ -219,7 +219,7 @@ class OutgoingCallsDailyReportMaker:
         workbook = self._make_excel_workbook(report_df)
 
         file_date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        file_name = f"report_{self._date_from}_{self._project_id}_{file_date}.xlsx"
+        file_name = f"./reports/report_{self._date_from}_{self._project_id}_{file_date}.xlsx"
         workbook.save(file_name)
         print(f"Файл {file_name} сохранён")
 
