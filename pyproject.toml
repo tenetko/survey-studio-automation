@@ -1,0 +1,21 @@
+[project]
+name = "survey-studio-automation"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Michael Tenetko",email = "tenetko@users.noreply.github.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "survey-studio-clients @ git+https://github.com/tenetko/survey-studio-clients",
+    "black (>=25.1.0,<26.0.0)",
+    "isort (>=6.0.1,<7.0.0)",
+    "ruff (>=0.11.13,<0.12.0)",
+    "pytest-cov (>=6.1.1,<7.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
