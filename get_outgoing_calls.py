@@ -1,64 +1,38 @@
 import sys
 from collections import defaultdict
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
+from datetime import datetime
 
 import openpyxl
 import pandas as pd
 from openpyxl.styles import Alignment, Font, PatternFill
 from survey_studio_clients.core.outgoing_calls import SurveyStudioOutgoingCallsClient
 
+from base_automation import BaseAutomation
 from params.results import RESULTS
 
 
-class OutgoingCallsDailyReportMaker:
-    DATE_FORMAT = "%Y-%m-%d"
+class OutgoingCallsDailyReportMaker(BaseAutomation):
+    PARAMS_NUMBER = 2
 
-    def __init__(self) -> None:
-        if not self._are_arguments_valid():
-            self._show_usage_example()
-            sys.exit()
-
-        _token = self._get_token()
+    def __init__(self, client) -> None:
         self._project_id = self._get_project_id()
-        self._date_from = self._get_date_from()
-        self._date_to = self._get_date_to()
-
-        self._calls_client = SurveyStudioOutgoingCallsClient(_token)
-
-    @staticmethod
-    def _are_arguments_valid() -> bool:
-        if len(sys.argv) == 1 or len(sys.argv) == 3:
-            return True
-
-        return False
+        super().__init__(client)
 
     @staticmethod
     def _show_usage_example() -> None:
-        message = """
+        print(
+            """
         Программу надо запускать одним из двух способов:
-        
+
         1. Либо с двумя параметрами - в этом случае программа сформирует отчёт за вчерашний день:
-        
+
         \t\tpoetry run python get_outgoing_calls.py <token> <project_id>
-        
-        2. Либо вообще без параметров - в этом случае программа спросит у вас токен, ID проекта и две даты:
-        
+
+        2. Либо вообще без параметров - в этом случае программа попросит вас ввести токен, ID проекта и две даты:
+
         \t\tpoetry run python get_outgoing_calls.py
         """
-
-        print(message)
-
-    @staticmethod
-    def _are_params_provided() -> bool:
-        return len(sys.argv) == 3
-
-    def _get_token(self) -> str:
-        if self._are_params_provided():
-            return sys.argv[1]
-
-        else:
-            return input("Вставьте ваш токен: ")
+        )
 
     def _get_project_id(self) -> str:
         if self._are_params_provided():
@@ -67,27 +41,8 @@ class OutgoingCallsDailyReportMaker:
         else:
             return input("Введите ID проекта: ")
 
-    def _get_date_from(self) -> str:
-        if self._are_params_provided():
-            return self._get_yesterday_date()
-
-        else:
-            return input("Введите начало периода в формате YYYY-MM-DD hh:mm:ss: ")
-
-    def _get_date_to(self) -> str:
-        if self._are_params_provided():
-            return self._get_yesterday_date()
-
-        else:
-            return input("Введите конец периода в формате YYYY-MM-DD hh:mm:ss: ")
-
-    def _get_yesterday_date(self) -> str:
-        date = datetime.now().astimezone(ZoneInfo("Europe/Moscow")) - timedelta(days=7)
-
-        return datetime.strftime(date, self.DATE_FORMAT)
-
     def _get_raw_data(self) -> pd.DataFrame:
-        raw_data = self._calls_client.get_outgoing_calls(self._project_id, self._date_from, self._date_to)
+        raw_data = self._ss_client.get_dataframe(self._project_id, self._date_from, self._date_to)
 
         return raw_data[["Результат", "Фактический канал"]]
 
@@ -211,6 +166,10 @@ class OutgoingCallsDailyReportMaker:
 
         return workbook
 
+    def _get_report_file_name(self) -> str:
+        file_date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        return f"./reports/report_outgoing_calls_{self._date_from}_{self._project_id}_{file_date}.xlsx"
+
     def run(self) -> None:
         raw_data = self._get_raw_data()
         results_to_channel_map, channels_counter_map = self._make_maps(raw_data)
@@ -218,12 +177,11 @@ class OutgoingCallsDailyReportMaker:
         report_df = self._make_report(results_to_channel_map, channels_counter_map)
         workbook = self._make_excel_workbook(report_df)
 
-        file_date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        file_name = f"./reports/report_{self._date_from}_{self._project_id}_{file_date}.xlsx"
+        file_name = self._get_report_file_name()
         workbook.save(file_name)
         print(f"Файл {file_name} сохранён")
 
 
 if __name__ == "__main__":
-    report_maker = OutgoingCallsDailyReportMaker()
+    report_maker = OutgoingCallsDailyReportMaker(SurveyStudioOutgoingCallsClient)
     report_maker.run()

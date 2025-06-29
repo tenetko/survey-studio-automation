@@ -6,7 +6,7 @@ authors = [
     {name = "Michael Tenetko",email = "tenetko@users.noreply.github.com"}
 ]
 readme = "README.md"
-requires-python = "^3.13"
+requires-python = ">=3.13"
 dependencies = [
     "survey-studio-clients @ git+https://github.com/tenetko/survey-studio-clients",
     "black (>=25.1.0,<26.0.0)",
