@@ -866,6 +866,8 @@ files = []
 develop = false
 
 [package.dependencies]
+beautifulsoup4 = "^4.13.4"
+lxml = "^6.0.0"
 openpyxl = "^3.1.5"
 pandas = "^2.2.3"
 requests = "^2.32.3"
@@ -875,7 +877,7 @@ requests-mock = "^1.12.1"
 type = "git"
 url = "https://github.com/tenetko/survey-studio-clients"
 reference = "HEAD"
-resolved_reference = "8fe04e9f2ee598fcdd898d947655de5673af8969"
+resolved_reference = "aa0f3e7308983f5cb743019e53bd75d95cccd01f"
 
 [[package]]
 name = "typing-extensions"
@@ -922,4 +924,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "8cb00b9fc03a89a9c850c2566fd236cc288d3db0dd5d24e281a713f97b9b2194"
+content-hash = "3ce324500e300c5651613ddfd0af8a754c18b2633f960c3c04ba1311763e8608"

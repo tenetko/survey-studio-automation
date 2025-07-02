@@ -5,7 +5,7 @@ from datetime import datetime
 import openpyxl
 import pandas as pd
 from openpyxl.styles import Alignment, Font, PatternFill
-from survey_studio_clients.core.outgoing_calls import SurveyStudioOutgoingCallsClient
+from survey_studio_clients.api_clients.outgoing_calls import SurveyStudioOutgoingCallsClient
 
 from base_automation import BaseAutomation
 from params.results import RESULTS
@@ -52,8 +52,10 @@ class OutgoingCallsDailyReportMaker(BaseAutomation):
         channels_counter_map = defaultdict(int)
 
         for _, row in data.iterrows():
-            channel = row["Фактический канал"]
             result = row["Результат"]
+            channel = row["Фактический канал"]
+            if pd.isna(channel):
+                channel = "no_name"
 
             results_to_channel_map[result][channel] += 1
             channels_counter_map[channel] += 1

@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import pandas as pd
-from survey_studio_clients.core.operator_work_time import SurveyStudioOperatorWorkTimeClient
+from survey_studio_clients.api_clients.operator_work_time import SurveyStudioOperatorWorkTimeClient
 
 from base_automation import BaseAutomation
 

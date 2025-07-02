@@ -2,7 +2,7 @@ import sys
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from survey_studio_clients.core.base import SurveyStudioClient
+from survey_studio_clients.api_clients.base import SurveyStudioClient
 
 
 class BaseAutomation:
@@ -26,7 +26,8 @@ class BaseAutomation:
 
         return False
 
-    def _show_usage_example(self):
+    @staticmethod
+    def _show_usage_example():
         raise NotImplementedError
 
     def _are_params_provided(self) -> bool:
