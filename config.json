@@ -1,0 +1,6 @@
+{
+    "checklist_path": ".",
+    "blacklist_path": ".",
+    "results_path": "../../results",
+    "templates_path": "."
+}

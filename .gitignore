@@ -194,7 +194,8 @@ cython_debug/
 .cursorindexingignore
 
 .idea
-*.xlsx
+*.xlsx*
+*.xlsm*
 *.json
 *.csv
 *.zip

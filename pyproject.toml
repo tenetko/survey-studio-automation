@@ -6,13 +6,18 @@ authors = [
     {name = "Michael Tenetko",email = "tenetko@users.noreply.github.com"}
 ]
 readme = "README.md"
-requires-python = "^3.13"
+requires-python = ">=3.13"
 dependencies = [
     "survey-studio-clients @ git+https://github.com/tenetko/survey-studio-clients",
     "black (>=25.1.0,<26.0.0)",
     "isort (>=6.0.1,<7.0.0)",
     "ruff (>=0.11.13,<0.12.0)",
-    "pytest-cov (>=6.1.1,<7.0.0)"
+    "pytest-cov (>=6.1.1,<7.0.0)",
+    "polars (>=1.31.0,<2.0.0)",
+    "fastexcel (>=0.14.0,<0.15.0)",
+    "xlsx2csv (>=0.8.4,<0.9.0)",
+    "openpyxl (>=3.1.5,<4.0.0)",
+    "xlsxwriter (>=3.2.5,<4.0.0)"
 ]
 
 
