@@ -199,3 +199,4 @@ cython_debug/
 *.json
 *.csv
 *.zip
+*.txt

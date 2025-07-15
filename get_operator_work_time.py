@@ -89,6 +89,17 @@ class OperatorWorkTimeReportMaker(BaseAutomation):
         rows.append(per_questionnaire)
         per_recruits = round((cnt_recruites/work_time), 2)
         rows.append(per_recruits)
+
+        folders = df_worktime['Наименование'].unique()
+        res_folders = []
+        target_value = '2025'
+
+        for el in folders:
+            index = el.index(target_value)
+            res_folders.append(el[index + 5:])
+
+        columns.append(", ".join(res_folders))  
+
         rows = [rows]
 
         return pd.DataFrame(rows)
