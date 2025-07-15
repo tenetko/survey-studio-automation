@@ -2,12 +2,26 @@ from datetime import datetime
 
 import pandas as pd
 from survey_studio_clients.api_clients.operator_work_time import SurveyStudioOperatorWorkTimeClient
+from survey_studio_clients.web_scrapers.daily_counters import DailyCountersPageScraper
 
 from base_automation import BaseAutomation
+import json
+
 
 
 class OperatorWorkTimeReportMaker(BaseAutomation):
     PARAMS_NUMBER = 1
+
+    def __init__(self, client: SurveyStudioOperatorWorkTimeClient, scraper_client: DailyCountersPageScraper) -> None:
+        self._config = self._get_config()
+        self._ss_client = client(self._config["token"])
+        self._scraper_client = DailyCountersPageScraper(self._config["quota_url"])
+        self._date_from = self._config["date_from"]
+        self._date_to = self._config["date_to"]
+
+    def _get_config(self):
+        with open("config.json") as ifile:
+            return json.load(ifile)
 
     @staticmethod
     def _show_usage_example() -> None:
@@ -33,6 +47,9 @@ class OperatorWorkTimeReportMaker(BaseAutomation):
         return f"./reports/report_operator_work_time_{self._date_from}_{file_date}.xlsx"
 
     def _make_everyday_report(self, df: pd.DataFrame) -> None:
+        counter_name = self._scraper_client.get_daily_counter_name(datetime(2025, 7, 9))
+        value_comp = self._scraper_client.get_value_by_counter_name(counter_name)
+
         rows = []
         rows.append(df.iloc[0].iloc[1])
         
@@ -62,29 +79,36 @@ class OperatorWorkTimeReportMaker(BaseAutomation):
             worktimes.append(x)
 
         df['Рабочее время'] = pd.Series(worktimes)
-        print(worktimes)
-        print(df['Рабочее время'])
-        work_time = df['Рабочее время'].sum()
+        work_time = round(df['Рабочее время'].sum(),2 )
         rows.append(work_time)
-
+        
+        rows.append(value_comp)
         cnt_recruites = df['Успешных'].sum()        
         rows.append(cnt_recruites)
+        per_questionnaire = round((value_comp/work_time), 2)
+        rows.append(per_questionnaire)
+        per_recruits = round((cnt_recruites/work_time), 2)
+        rows.append(per_recruits)
         rows = [rows]
 
         return pd.DataFrame(rows)
     
     def run(self) -> None:
+        
+       
+      
+
         raw_data = self._get_raw_data()
         report = self._make_everyday_report(raw_data)
         print(report)
 
-        # file_name = self._get_report_file_name()
-        # raw_data.to_excel(file_name)
+        file_name = self._get_report_file_name()
+        raw_data.to_excel(file_name)
         
 
     
 
 
 if __name__ == "__main__":
-    report_maker = OperatorWorkTimeReportMaker(SurveyStudioOperatorWorkTimeClient)
+    report_maker = OperatorWorkTimeReportMaker(SurveyStudioOperatorWorkTimeClient, DailyCountersPageScraper)
     report_maker.run()
