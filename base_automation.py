@@ -42,22 +42,28 @@ class BaseAutomation:
 
     def _get_date_from(self) -> str:
         if self._are_params_provided():
-            return self._get_yesterday_date()
+            yesterday = self._get_yesterday_date()
+
+            return self._get_date_as_iso_string(yesterday)
 
         else:
             return input("Введите начало периода в формате YYYY-MM-DD hh:mm:ss: ")
 
     def _get_date_to(self) -> str:
         if self._are_params_provided():
-            return self._get_yesterday_date()
+            yesterday = self._get_yesterday_date()
+
+            return self._get_date_as_iso_string(yesterday)
 
         else:
             return input("Введите конец периода в формате YYYY-MM-DD hh:mm:ss: ")
 
-    def _get_yesterday_date(self) -> str:
-        date = datetime.now().astimezone(ZoneInfo("Europe/Moscow")) - timedelta(days=1)
+    @staticmethod
+    def _get_yesterday_date() -> datetime:
+        return datetime.now().astimezone(ZoneInfo("Europe/Moscow")) - timedelta(days=1)
 
-        return datetime.strftime(date, self.DATE_FORMAT)
+    def _get_date_as_iso_string(self, dt: datetime) -> str:
+        return datetime.strftime(dt, self.DATE_FORMAT)
 
     def _get_report_file_name(self):
         raise NotImplementedError
