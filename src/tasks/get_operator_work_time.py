@@ -1,12 +1,13 @@
-import argparse
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
+from time import sleep
 
 import pandas as pd
 from survey_studio_clients.api_clients.operator_work_time import SurveyStudioOperatorWorkTimeClient
 from survey_studio_clients.web_scrapers.daily_counters import DailyCountersPageScraper
 
-from base_automation import BaseAutomation
+from src.tasks.base_automation import BaseAutomation
+from src.utils.get_yesterday import get_yesterday_date
 
 
 class OperatorWorkTimeReportMaker(BaseAutomation):
@@ -25,25 +26,23 @@ class OperatorWorkTimeReportMaker(BaseAutomation):
         12: "декабря",
     }
 
-    PARAMS_NUMBER = 1
+    PARAMS_NUMBER = 2
 
-    def __init__(self, client: SurveyStudioOperatorWorkTimeClient, scraper: DailyCountersPageScraper) -> None:
-        self.argparser = argparse.ArgumentParser(description="get_operator_work_time")
-        self.argparser.add_argument("-t", "--token", help="Token")
-        self.argparser.add_argument("-u", "--url", help="URL with completes")
+    def __init__(
+        self, client: SurveyStudioOperatorWorkTimeClient, scraper: DailyCountersPageScraper, yesterday: datetime
+    ) -> None:
+        super().__init__(client)
 
-        args = self.argparser.parse_args()
-        if not args.token or not args.url:
-            print("You have to specify both --token and --url:\n")
-            print("\tpoetry run python get_operator_work_time.py --token abc123 --url https://abc.xyz")
-            sys.exit(-1)
+        _url = sys.argv[2]
+        self._scraper_client = scraper(_url)
 
-        self._ss_client = client(args.token)
-        self._scraper_client = scraper(args.url)
+        self._date_from = self._get_date_as_iso_string(yesterday)
+        self._counter = self._get_date_as_survey_studio_counter(yesterday)
 
-        _yesterday = self._get_yesterday_date()
-        self._date_from = self._get_date_as_iso_string(_yesterday)
-        self._counter = self._get_date_as_survey_studio_counter(_yesterday)
+    @staticmethod
+    def _show_usage_example() -> None:
+        print("You have to specify both token and url:\n")
+        print('\tpoetry run python src/tasks/get_operator_work_time.py yourtoken123 "https://abc.xyz"')
 
     def _get_raw_data(self) -> pd.DataFrame:
         return self._ss_client.get_dataframe(self._date_from, self._date_from)
@@ -121,9 +120,25 @@ class OperatorWorkTimeReportMaker(BaseAutomation):
 
         file_name = self._get_report_file_name()
         report.to_excel(file_name)
-        print(f"Файл {file_name} сохранён")
+        print(f"File {file_name} has been successfully saved")
 
 
 if __name__ == "__main__":
-    report_maker = OperatorWorkTimeReportMaker(SurveyStudioOperatorWorkTimeClient, DailyCountersPageScraper)
-    report_maker.run()
+    yesterday = get_yesterday_date()
+    if yesterday.weekday() == 6:  # sunday
+        for delta in range(2, -1, -1):
+            day = yesterday - timedelta(days=delta)
+            report_maker = OperatorWorkTimeReportMaker(
+                SurveyStudioOperatorWorkTimeClient, DailyCountersPageScraper, day
+            )
+            report_maker.run()
+            if delta != 0:
+                print(
+                    "Waiting for 62 seconds because Survey Studio API allows only one request to requestoperatorworktime per 60 seconds..."
+                )
+                sleep(62)
+    else:
+        report_maker = OperatorWorkTimeReportMaker(
+            SurveyStudioOperatorWorkTimeClient, DailyCountersPageScraper, yesterday
+        )
+        report_maker.run()

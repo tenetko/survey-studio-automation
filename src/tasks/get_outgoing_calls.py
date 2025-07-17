@@ -1,48 +1,36 @@
 import sys
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
+from time import sleep
 
 import openpyxl
 import pandas as pd
 from openpyxl.styles import Alignment, Font, PatternFill
 from survey_studio_clients.api_clients.outgoing_calls import SurveyStudioOutgoingCallsClient
 
-from base_automation import BaseAutomation
-from params.results import RESULTS
+from src.params.results import RESULTS
+from src.tasks.base_automation import BaseAutomation
+from src.utils.get_yesterday import get_yesterday_date
 
 
 class OutgoingCallsDailyReportMaker(BaseAutomation):
     PARAMS_NUMBER = 2
 
-    def __init__(self, client) -> None:
-        self._project_id = self._get_project_id()
+    def __init__(self, client: SurveyStudioOutgoingCallsClient, yesterday: datetime) -> None:
         super().__init__(client)
+        self._project_id = self._get_project_id()
+        self._date_from = self._get_date_as_iso_string(yesterday)
 
     @staticmethod
     def _show_usage_example() -> None:
-        print(
-            """
-        Программу надо запускать одним из двух способов:
-
-        1. Либо с двумя параметрами - в этом случае программа сформирует отчёт за вчерашний день:
-
-        \t\tpoetry run python get_outgoing_calls.py <token> <project_id>
-
-        2. Либо вообще без параметров - в этом случае программа попросит вас ввести токен, ID проекта и две даты:
-
-        \t\tpoetry run python get_outgoing_calls.py
-        """
-        )
+        print("You have to specify both token and project ID:\n")
+        print("\tpoetry run python src/tasks/get_outgoing_calls.py yourtoken123 55555")
 
     def _get_project_id(self) -> str:
-        if self._are_params_provided():
-            return sys.argv[2]
-
-        else:
-            return input("Введите ID проекта: ")
+        return sys.argv[2]
 
     def _get_raw_data(self) -> pd.DataFrame:
-        raw_data = self._ss_client.get_dataframe(self._project_id, self._date_from, self._date_to)
+        raw_data = self._ss_client.get_dataframe(self._project_id, self._date_from, self._date_from)
 
         return raw_data[["Результат", "Фактический канал"]]
 
@@ -64,6 +52,10 @@ class OutgoingCallsDailyReportMaker(BaseAutomation):
 
     def _make_report(self, results_to_channel_map: defaultdict, channels_counter_map: defaultdict) -> pd.DataFrame:
         rows = []
+
+        if not channels_counter_map:
+            rows.append(f"За {self._date_from} не было звонков")
+            return pd.DataFrame(rows)
 
         channels = sorted(channels_counter_map.keys())
 
@@ -181,9 +173,21 @@ class OutgoingCallsDailyReportMaker(BaseAutomation):
 
         file_name = self._get_report_file_name()
         workbook.save(file_name)
-        print(f"Файл {file_name} сохранён")
+        print(f"File {file_name} has been successfully saved")
 
 
 if __name__ == "__main__":
-    report_maker = OutgoingCallsDailyReportMaker(SurveyStudioOutgoingCallsClient)
-    report_maker.run()
+    yesterday = get_yesterday_date()
+    if yesterday.weekday() == 6:  # sunday
+        for delta in range(2, -1, -1):
+            day = yesterday - timedelta(days=delta)
+            report_maker = OutgoingCallsDailyReportMaker(SurveyStudioOutgoingCallsClient, day)
+            report_maker.run()
+            if delta != 0:
+                print(
+                    "Waiting for 62 seconds because Survey Studio API allows only one request to requestoperatorworktime per 60 seconds..."
+                )
+                sleep(62)
+    else:
+        report_maker = OutgoingCallsDailyReportMaker(SurveyStudioOutgoingCallsClient, yesterday)
+        report_maker.run()

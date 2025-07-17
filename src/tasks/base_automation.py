@@ -1,6 +1,5 @@
 import sys
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
+from datetime import datetime
 
 from survey_studio_clients.api_clients.base import SurveyStudioClient
 
@@ -15,30 +14,23 @@ class BaseAutomation:
             sys.exit()
 
         _token = self._get_token()
-        self._date_from = self._get_date_from()
-        self._date_to = self._get_date_to()
-
         self._ss_client = client(_token)
 
     def _are_arguments_valid(self) -> bool:
-        if len(sys.argv) == 1 or self._are_params_provided():
+        if self._are_params_provided():
             return True
 
         return False
+
+    def _are_params_provided(self) -> bool:
+        return len(sys.argv) - 1 == self.PARAMS_NUMBER
 
     @staticmethod
     def _show_usage_example():
         raise NotImplementedError
 
-    def _are_params_provided(self) -> bool:
-        return len(sys.argv) - 1 == self.PARAMS_NUMBER
-
     def _get_token(self) -> str:
-        if self._are_params_provided():
-            return sys.argv[1]
-
-        else:
-            return input("Введите ваш токен: ")
+        return sys.argv[1]
 
     def _get_date_from(self) -> str:
         if self._are_params_provided():
@@ -57,10 +49,6 @@ class BaseAutomation:
 
         else:
             return input("Введите конец периода в формате YYYY-MM-DD hh:mm:ss: ")
-
-    @staticmethod
-    def _get_yesterday_date() -> datetime:
-        return datetime.now().astimezone(ZoneInfo("Europe/Moscow")) - timedelta(days=1)
 
     def _get_date_as_iso_string(self, dt: datetime) -> str:
         return datetime.strftime(dt, self.DATE_FORMAT)
