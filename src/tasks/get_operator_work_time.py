@@ -7,7 +7,7 @@ from survey_studio_clients.api_clients.operator_work_time import SurveyStudioOpe
 from survey_studio_clients.web_scrapers.daily_counters import DailyCountersPageScraper
 
 from src.google_clients.google_sheets_client import GoogleSheetsClient
-from src.settings import OPERATOR_WORK_TIME_SPREADSHEET_ID
+from src.settings import OPERATOR_WORK_TIME_SPREADSHEET_ID, QUOTA_LINK
 from src.tasks.base_automation import BaseAutomation
 from src.utils.get_yesterday import get_yesterday_date
 from src.types.google_sheets import CellsRange, RepeatCellRequest
@@ -39,13 +39,12 @@ class OperatorWorkTimeReportMaker(BaseAutomation):
         12: "декабря",
     }
 
-    PARAMS_NUMBER = 2
+    PARAMS_NUMBER = 1
 
     def __init__(self, client: SurveyStudioOperatorWorkTimeClient, yesterday: datetime) -> None:
         super().__init__(client)
 
-        _url = sys.argv[2]
-        self._scraper = DailyCountersPageScraper(_url)
+        self._scraper = DailyCountersPageScraper(QUOTA_LINK)
 
         self._date_from = self._get_date_as_iso_string(yesterday)
         self._counter = self._get_date_as_survey_studio_counter(yesterday)
@@ -55,8 +54,8 @@ class OperatorWorkTimeReportMaker(BaseAutomation):
 
     @staticmethod
     def _show_usage_example() -> None:
-        print("You have to specify both token and url:\n")
-        print('\tpoetry run python src/tasks/get_operator_work_time.py yourtoken123 "https://abc.xyz"')
+        print("You have to specify your token:\n")
+        print('\tpoetry run python src/tasks/get_operator_work_time.py yourtoken123')
 
     def _get_raw_data(self) -> pd.DataFrame:
         return self._ss_client.get_dataframe(self._date_from, self._date_from)
