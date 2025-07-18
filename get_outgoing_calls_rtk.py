@@ -4,10 +4,10 @@ from datetime import datetime
 
 import openpyxl
 import pandas as pd
+from base_automation import BaseAutomation
 from openpyxl.styles import Alignment, Font, PatternFill
 from survey_studio_clients.api_clients.outgoing_calls import SurveyStudioOutgoingCallsClient
 
-from base_automation import BaseAutomation
 from params.results_rtk import RESULTS
 
 

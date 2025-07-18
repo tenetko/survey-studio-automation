@@ -6,12 +6,25 @@ import pandas as pd
 from survey_studio_clients.api_clients.operator_work_time import SurveyStudioOperatorWorkTimeClient
 from survey_studio_clients.web_scrapers.daily_counters import DailyCountersPageScraper
 
+from src.google_clients.google_sheets_client import GoogleSheetsClient
+from src.settings import OPERATOR_WORK_TIME_SPREADSHEET_ID
 from src.tasks.base_automation import BaseAutomation
 from src.utils.get_yesterday import get_yesterday_date
+from src.types.google_sheets import CellsRange, RepeatCellRequest
 
 
 class OperatorWorkTimeReportMaker(BaseAutomation):
-    MONTH_TO_STRING_FOR_COUNTER = {
+    BORDER = {"style": "SOLID"}
+
+    CELL_FORMAT = {
+        "borders": {
+            "top": BORDER,
+            "bottom": BORDER,
+            "right": BORDER,
+        },
+    }
+
+    MONTH_TO_STRING = {
         1: "января",
         2: "февраля",
         3: "марта",
@@ -28,16 +41,17 @@ class OperatorWorkTimeReportMaker(BaseAutomation):
 
     PARAMS_NUMBER = 2
 
-    def __init__(
-        self, client: SurveyStudioOperatorWorkTimeClient, scraper: DailyCountersPageScraper, yesterday: datetime
-    ) -> None:
+    def __init__(self, client: SurveyStudioOperatorWorkTimeClient, yesterday: datetime) -> None:
         super().__init__(client)
 
         _url = sys.argv[2]
-        self._scraper_client = scraper(_url)
+        self._scraper = DailyCountersPageScraper(_url)
 
         self._date_from = self._get_date_as_iso_string(yesterday)
         self._counter = self._get_date_as_survey_studio_counter(yesterday)
+
+        self._sheets = GoogleSheetsClient(OPERATOR_WORK_TIME_SPREADSHEET_ID)
+        self._sheet_name = "Отчёт для КМ"
 
     @staticmethod
     def _show_usage_example() -> None:
@@ -47,15 +61,26 @@ class OperatorWorkTimeReportMaker(BaseAutomation):
     def _get_raw_data(self) -> pd.DataFrame:
         return self._ss_client.get_dataframe(self._date_from, self._date_from)
 
+    def _does_report_already_exist(self, raw_data: pd.DataFrame) -> bool:
+        date = self._get_date_for_google_sheets(raw_data.iloc[0].iloc[1])
+        existing_rows = self._sheets.read_sheet(self._sheet_name)
+
+        for row in existing_rows:
+            if row[0] == date:
+                return True
+
+        return False
+
     def _get_date_as_survey_studio_counter(self, dt: datetime) -> str:
         month = dt.month
         day = dt.day
 
-        return f"{day} {self.MONTH_TO_STRING_FOR_COUNTER[month]}"
+        return f"{day} {self.MONTH_TO_STRING[month]}"
 
-    def _make_everyday_report(self, df: pd.DataFrame, completes_amount: int) -> pd.DataFrame:
+    def _make_everyday_report(self, df: pd.DataFrame, completes_amount: int) -> tuple[list, pd.DataFrame]:
         rows = []
-        rows.append(df.iloc[0].iloc[1])
+        date = self._get_date_for_google_sheets(df.iloc[0].iloc[1])
+        rows.append(date)
 
         df = df[2:][:]
 
@@ -68,12 +93,12 @@ class OperatorWorkTimeReportMaker(BaseAutomation):
         df = df[df["Наименование"].str.contains("23-071675-18-C", na=False)]
         df = df.reset_index()
 
-        count_oper_name = len(df["Оператор"].unique())
-        rows.append(count_oper_name)
-
         columns_to_change = ["Готов", "Разговор", "Перезвон", "Звонков", "Всего"]
         for c in columns_to_change:
             df[c] = df[c].apply(lambda x: x / 3600)
+
+        count_oper_name = len(df["Оператор"].unique())
+        rows.append(count_oper_name)
 
         worktimes = []
         for _, row in df.iterrows():
@@ -104,23 +129,52 @@ class OperatorWorkTimeReportMaker(BaseAutomation):
 
         rows.append(", ".join(res_folders))
 
-        rows = [rows]
+        return rows, df
 
-        return pd.DataFrame(rows)
+    def _get_date_for_google_sheets(self, dt: str) -> str:
+        dt = datetime.strptime(dt, "%d.%m.%Y %H:%M")
+        month = self.MONTH_TO_STRING[dt.month]
+
+        return f"{dt.day} {month} {dt.year} г."
 
     def _get_report_file_name(self) -> str:
         file_date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         return f"./reports/report_operator_work_time_{self._date_from}_{file_date}.xlsx"
 
+    def _get_last_row_index(self) -> int:
+        values = self._sheets.read_sheet(self._sheet_name)
+
+        return len(values) - 1
+
     def run(self) -> None:
         raw_data = self._get_raw_data()
-        completes_amount = self._scraper_client._get_value_by_counter_name(self._counter)
 
-        report = self._make_everyday_report(raw_data, completes_amount)
+        if self._does_report_already_exist(raw_data):
+            print(f"The report for {self._date_from} already exists")
+            sys.exit(-1)
+
+        completes_amount = self._scraper.get_value_by_counter_name(self._counter)
+        rows, dataframe = self._make_everyday_report(raw_data, completes_amount)
 
         file_name = self._get_report_file_name()
-        report.to_excel(file_name)
+        dataframe.to_excel(file_name)
+
         print(f"File {file_name} has been successfully saved")
+
+
+        self._sheets.append_values([rows], self._sheet_name)
+
+        sheet_id = self._sheets.get_sheet_id(self._sheet_name)
+        last_row_index = self._get_last_row_index()
+
+        cells_range = CellsRange(sheet_id, last_row_index, last_row_index + 1, 0, 8)
+        request = RepeatCellRequest(cells_range, self.CELL_FORMAT)
+        format_requests = [request.to_dict()]
+
+        self._sheets.change_sheet(format_requests)
+
+        print(f"A new row for {self._date_from} has been successfully added to the Google Sheet")
+
 
 
 if __name__ == "__main__":
@@ -128,9 +182,7 @@ if __name__ == "__main__":
     if yesterday.weekday() == 6:  # sunday
         for delta in range(2, -1, -1):
             day = yesterday - timedelta(days=delta)
-            report_maker = OperatorWorkTimeReportMaker(
-                SurveyStudioOperatorWorkTimeClient, DailyCountersPageScraper, day
-            )
+            report_maker = OperatorWorkTimeReportMaker(SurveyStudioOperatorWorkTimeClient, day)
             report_maker.run()
             if delta != 0:
                 print(
@@ -138,7 +190,5 @@ if __name__ == "__main__":
                 )
                 sleep(62)
     else:
-        report_maker = OperatorWorkTimeReportMaker(
-            SurveyStudioOperatorWorkTimeClient, DailyCountersPageScraper, yesterday
-        )
+        report_maker = OperatorWorkTimeReportMaker(SurveyStudioOperatorWorkTimeClient, yesterday)
         report_maker.run()
