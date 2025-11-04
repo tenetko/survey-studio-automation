@@ -1406,6 +1406,21 @@ files = [
 ]
 
 [[package]]
+name = "sidetable"
+version = "0.9.1"
+description = "sidetable builds simple but useful summary tables of your data"
+optional = false
+python-versions = ">=3.6"
+groups = ["main"]
+files = [
+    {file = "sidetable-0.9.1-py3-none-any.whl", hash = "sha256:13f6076977eb7ca68f054463f90ec2dd7001a8df75b349ccc7bcb0377a75e4bc"},
+    {file = "sidetable-0.9.1.tar.gz", hash = "sha256:363d90e4ec0e83699ad34e4d688806e1156e9ebbe6a1d229ab5d44c8229c8a9d"},
+]
+
+[package.dependencies]
+pandas = ">=1.0"
+
+[[package]]
 name = "six"
 version = "1.17.0"
 description = "Python 2 and 3 compatibility utilities"
@@ -1451,7 +1466,7 @@ requests-mock = "^1.12.1"
 type = "git"
 url = "https://github.com/tenetko/survey-studio-clients"
 reference = "HEAD"
-resolved_reference = "c4711a7e18d00d3f91e5983bd69aa22db589b3b4"
+resolved_reference = "d07497379aa33f317071b5dfebda483942df49e6"
 
 [[package]]
 name = "typing-extensions"
@@ -1534,4 +1549,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<4.0"
-content-hash = "d97b276542a20634857a8442a404a16f370e98f011adbedc6b3bf4c13b55a0e2"
+content-hash = "36e1247f9a1cb2989ef7c3f3629f348bed417f4f962b0dcd8fb54f45de80660a"

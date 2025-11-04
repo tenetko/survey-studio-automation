@@ -9,8 +9,8 @@ from survey_studio_clients.web_scrapers.daily_counters import DailyCountersPageS
 from src.google_clients.google_sheets_client import GoogleSheetsClient
 from src.settings import OPERATOR_WORK_TIME_SPREADSHEET_ID, QUOTA_LINK
 from src.tasks.base_automation import BaseAutomation
-from src.utils.get_yesterday import get_yesterday_date
 from src.types.google_sheets import CellsRange, RepeatCellRequest
+from src.utils.get_yesterday import get_yesterday_date
 
 
 class OperatorWorkTimeReportMaker(BaseAutomation):
@@ -55,7 +55,7 @@ class OperatorWorkTimeReportMaker(BaseAutomation):
     @staticmethod
     def _show_usage_example() -> None:
         print("You have to specify your token:\n")
-        print('\tpoetry run python src/tasks/get_operator_work_time.py yourtoken123')
+        print("\tpoetry run python src/tasks/get_operator_work_time.py yourtoken123")
 
     def _get_raw_data(self) -> pd.DataFrame:
         return self._ss_client.get_dataframe(self._date_from, self._date_from)
@@ -160,7 +160,6 @@ class OperatorWorkTimeReportMaker(BaseAutomation):
 
         print(f"File {file_name} has been successfully saved")
 
-
         self._sheets.append_values([rows], self._sheet_name)
 
         sheet_id = self._sheets.get_sheet_id(self._sheet_name)
@@ -173,7 +172,6 @@ class OperatorWorkTimeReportMaker(BaseAutomation):
         self._sheets.change_sheet(format_requests)
 
         print(f"A new row for {self._date_from} has been successfully added to the Google Sheet")
-
 
 
 if __name__ == "__main__":
