@@ -2,6 +2,7 @@ import sys
 from collections import defaultdict
 from datetime import datetime, timedelta
 from time import sleep
+from zoneinfo import ZoneInfo
 
 import openpyxl
 import pandas as pd
@@ -162,7 +163,7 @@ class OutgoingCallsDailyReportMaker(BaseAutomation):
 
     def _get_report_file_name(self) -> str:
         file_date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        return f"./reports/report_outgoing_calls_{self._date_from}_{self._project_id}_{file_date}.xlsx"
+        return f"./reports/{self._project_id}_{self._date_from}_report_outgoing_calls_{file_date}.xlsx"
 
     def run(self) -> None:
         raw_data = self._get_raw_data()
@@ -178,6 +179,8 @@ class OutgoingCallsDailyReportMaker(BaseAutomation):
 
 if __name__ == "__main__":
     yesterday = get_yesterday_date()
+    # yesterday = datetime(2025, 11, 3).astimezone(ZoneInfo("Europe/Moscow"))
+
     if yesterday.weekday() == 6:  # sunday
         for delta in range(2, -1, -1):
             day = yesterday - timedelta(days=delta)

@@ -1,6 +1,7 @@
 import sys
 from datetime import datetime, timedelta
 from time import sleep
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 from survey_studio_clients.api_clients.operator_work_time import SurveyStudioOperatorWorkTimeClient
@@ -39,11 +40,12 @@ class OperatorWorkTimeReportMaker(BaseAutomation):
         12: "декабря",
     }
 
-    PARAMS_NUMBER = 1
+    PARAMS_NUMBER = 2
 
     def __init__(self, client: SurveyStudioOperatorWorkTimeClient, yesterday: datetime) -> None:
         super().__init__(client)
 
+        self._project_name = sys.argv[2]
         self._scraper = DailyCountersPageScraper(QUOTA_LINK)
 
         self._date_from = self._get_date_as_iso_string(yesterday)
@@ -54,8 +56,8 @@ class OperatorWorkTimeReportMaker(BaseAutomation):
 
     @staticmethod
     def _show_usage_example() -> None:
-        print("You have to specify your token:\n")
-        print("\tpoetry run python src/tasks/get_operator_work_time.py yourtoken123")
+        print("You have to specify your token and project name:\n")
+        print("\tpoetry run python src/tasks/get_operator_work_time.py yourtoken123 23-012345-67-C")
 
     def _get_raw_data(self) -> pd.DataFrame:
         return self._ss_client.get_dataframe(self._date_from, self._date_from)
@@ -89,7 +91,7 @@ class OperatorWorkTimeReportMaker(BaseAutomation):
         df.reset_index(inplace=True, drop=True)
         df = df.drop(df.index[-1])
 
-        df = df[df["Наименование"].str.contains("23-071675-18-C", na=False)]
+        df = df[df["Наименование"].str.contains(self._project_name, na=False)]
         df = df.reset_index()
 
         columns_to_change = ["Готов", "Разговор", "Перезвон", "Звонков", "Всего"]
@@ -150,7 +152,7 @@ class OperatorWorkTimeReportMaker(BaseAutomation):
 
         if self._does_report_already_exist(raw_data):
             print(f"The report for {self._date_from} already exists")
-            sys.exit(-1)
+            exit()
 
         completes_amount = self._scraper.get_value_by_counter_name(self._counter)
         rows, dataframe = self._make_everyday_report(raw_data, completes_amount)
@@ -176,6 +178,8 @@ class OperatorWorkTimeReportMaker(BaseAutomation):
 
 if __name__ == "__main__":
     yesterday = get_yesterday_date()
+    # yesterday = datetime(2025, 9, 7).astimezone(ZoneInfo("Europe/Moscow"))
+
     if yesterday.weekday() == 6:  # sunday
         for delta in range(2, -1, -1):
             day = yesterday - timedelta(days=delta)
