@@ -31,7 +31,7 @@ class OutgoingCallsDailyReportMaker(BaseAutomation):
         return sys.argv[2]
 
     def _get_raw_data(self) -> pd.DataFrame:
-        raw_data = self._ss_client.get_dataframe(self._project_id, self._date_from, self._date_from, False)
+        raw_data = self._ss_client.get_dataframe(self._project_id, self._date_from, self._date_from, 'null')
 
         return raw_data[["Результат", "Фактический канал"]]
 

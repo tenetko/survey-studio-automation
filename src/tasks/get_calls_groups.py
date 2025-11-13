@@ -1,6 +1,7 @@
 import sys
 from datetime import datetime, timedelta
 from time import sleep
+from zoneinfo import ZoneInfo
 
 import openpyxl
 import pandas as pd
@@ -81,9 +82,20 @@ class CallsGroupsDailyReportMaker(BaseAutomation):
     def run(self) -> None:
         raw_data = self._get_raw_data()
 
+        reg = []
+        oper = []
+
+        for _, row in raw_data.iterrows():
+            iter_row = row['База контактов']
+            reg.append(iter_row.split("_")[0])
+            oper.append(iter_row.split("_")[1])
+
+        raw_data['Регион'] = pd.Series(reg)
+        raw_data['Оператор_связи'] = pd.Series(oper)
+
         pivot = pd.pivot_table(
             raw_data,
-            index=["Регион оператора связи", "Оператор связи"],
+            index=["Регион", "Оператор_связи"],
             columns=["Результат"],
             aggfunc={"Результат": "count"},
             fill_value=0,
@@ -106,6 +118,8 @@ class CallsGroupsDailyReportMaker(BaseAutomation):
 
 if __name__ == "__main__":
     yesterday = get_yesterday_date()
+    # yesterday = datetime(2025, 11, 3).astimezone(ZoneInfo("Europe/Moscow"))
+
     if yesterday.weekday() == 6:  # sunday
         for delta in range(2, -1, -1):
             day = yesterday - timedelta(days=delta)

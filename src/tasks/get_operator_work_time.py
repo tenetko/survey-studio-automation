@@ -178,7 +178,7 @@ class OperatorWorkTimeReportMaker(BaseAutomation):
 
 if __name__ == "__main__":
     yesterday = get_yesterday_date()
-    # yesterday = datetime(2025, 9, 7).astimezone(ZoneInfo("Europe/Moscow"))
+    # yesterday = datetime(2025, 11, 3).astimezone(ZoneInfo("Europe/Moscow"))
 
     if yesterday.weekday() == 6:  # sunday
         for delta in range(2, -1, -1):
