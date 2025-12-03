@@ -16,16 +16,9 @@ class LoadArrowDailyReportMaker(BaseAutomation):
         self._project_id = self._get_project_id()
         self._counter_name = "CAWI полные интервью"
     
-    def run(self) -> None:
-        counter_id = self._ss_client.get_counter_id_by_name(self._project_id, self._counter_name)
-        print(counter_id)
-    
     def _get_project_id(self) -> str:
         return sys.argv[2]
 
-    def _get_raw_data(self) -> pd.DataFrame:
-        raw_data = self._ss_client.get_dataframe(self._project_id)
-    
     def _make_everyday_report_abbot(self, df: pd.DataFrame) -> pd.DataFrame:
 
         if "DB_Аптечная_сетьHidden_Т04" in list(df.columns):
@@ -70,13 +63,22 @@ class LoadArrowDailyReportMaker(BaseAutomation):
         return file_name_doc, file_name_pharma
 
     def run(self) -> None:
-        raw_data = self._get_raw_data()
+        counter_id = self._ss_client.get_counter_id_by_name(self._project_id, self._counter_name)
+
+        params = {
+            "project_id": self._project_id,
+            "counter_id": counter_id,
+        }
+
+        raw_data = self._ss_client.get_dataframe(params)
+        print(raw_data)
 
         file_name = self._get_report_file_name()
-        df_pharma.to_excel(file_name_pharma)
-        print(f"File {file_name_pharma} has been successfully saved")
-        df_doc.to_excel(file_name_doc)
-        print(f"File {file_name_doc} has been successfully saved")
+
+        # df_pharma.to_excel(file_name_pharma)
+        # print(f"File {file_name_pharma} has been successfully saved")
+        # df_doc.to_excel(file_name_doc)
+        # print(f"File {file_name_doc} has been successfully saved")
 
         
 if __name__ == "__main__":
