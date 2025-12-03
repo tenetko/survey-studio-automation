@@ -6,12 +6,12 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 
 from survey_studio_clients.api_clients.load_arrow_abbot import SurveyStudioLoadArrowAbbotClient
-from src.tasks.base_automation import BaseAutomation
+from base_automation import BaseAutomation
 
 class LoadArrowDailyReportMaker(BaseAutomation):
     PARAMS_NUMBER = 2
 
-    def __init__(self, client: SurveyStudioProjectsClient) -> None:
+    def __init__(self, client: SurveyStudioLoadArrowAbbotClient) -> None:
         super().__init__(client)
         self._project_id = self._get_project_id()
         self._counter_name = "CAWI полные интервью"
@@ -80,5 +80,5 @@ class LoadArrowDailyReportMaker(BaseAutomation):
 
         
 if __name__ == "__main__":
-    report_maker_abbot = LoadArrowDailyReportMaker(SurveyStudioProjectsClient)
+    report_maker_abbot = LoadArrowDailyReportMaker(SurveyStudioLoadArrowAbbotClient)
     report_maker_abbot.run()

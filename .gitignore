@@ -200,3 +200,4 @@ cython_debug/
 *.csv
 *.zip
 *.txt
+*.bat
