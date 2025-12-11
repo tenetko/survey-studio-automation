@@ -84,6 +84,13 @@ class CallsGroupsDailyReportMaker(BaseAutomation):
 
         reg = []
         oper = []
+        rows = []
+
+        if len(raw_data) < 1:
+            rows.append(f"За {self._date_from} не было звонков")
+            data = pd.DataFrame(rows)
+            file_name = self._get_report_file_name()
+            return data.to_excel(file_name, index=False)
 
         for _, row in raw_data.iterrows():
             iter_row = row['База контактов']
